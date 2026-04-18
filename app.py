@@ -13,7 +13,7 @@ def home():
       <body style="font-family:Arial; margin:40px; background:#0D1117; color:white">
         <h1>🚀 Mon Application CI/CD</h1>
         <p>Version : <strong>{VERSION}</strong></p>
-        <p>Déployée automatiquement via GitHub Actions + Docker 22</p>
+        <p>Déployée automatiquement via GitHub Actions + Docker 22git </p>
         <p style="color:#56D364">✅ Pipeline exécuté avec succès</p>
       </body>
     </html>
@@ -31,6 +31,12 @@ def formations():
         {'id': 3, 'titre': 'Python Flask', 'duree': '20h'},
     ]
     return jsonify({'formations': data, 'total': len(data)})
+
+# Dans app.py, ajoute une nouvelle route :
+@app.route('/api/hello')
+def hello():
+    return jsonify({'message': 'Hello depuis la v2 !', 'version': VERSION})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
