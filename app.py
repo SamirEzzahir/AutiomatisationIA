@@ -3,7 +3,7 @@ from flask import Flask, jsonify
 import os
 
 app = Flask(__name__)
-VERSION = os.getenv('APP_VERSION', '2.0')
+VERSION = os.getenv('APP_VERSION', '1.0')
 
 @app.route('/')
 def home():
@@ -13,7 +13,7 @@ def home():
       <body style="font-family:Arial; margin:40px; background:#0D1117; color:white">
         <h1>🚀 Mon Application CI/CD</h1>
         <p>Version : <strong>{VERSION}</strong></p>
-        <p>Déployée automatiquement via GitHub Actions + Docker !</p>
+        <p>Déployée automatiquement via GitHub Actions + Docker 22</p>
         <p style="color:#56D364">✅ Pipeline exécuté avec succès</p>
       </body>
     </html>
