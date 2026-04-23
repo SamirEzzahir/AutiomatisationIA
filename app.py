@@ -16,21 +16,23 @@ def get_db():
 
 
 def init_db():
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute('''
-                CREATE TABLE IF NOT EXISTS tasks (
-                    id SERIAL PRIMARY KEY,
-                    title TEXT NOT NULL,
-                    done BOOLEAN DEFAULT FALSE,
-                    created_at TIMESTAMP DEFAULT NOW()
-                )
-            ''')
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS tasks (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            done BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    ''')
+    cur.close()
+    conn.close()
 
 try:
     init_db()
-except Exception:
-    pass
+except Exception as e:
+    print(f"DB init failed: {e}")
 
 
 @app.route('/')
@@ -90,15 +92,20 @@ def home():
 
   <script>
     async function loadTasks() {{
-      const res = await fetch('/tasks');
-      const data = await res.json();
       const ul = document.getElementById('taskList');
-      ul.innerHTML = '';
-      if (data.tasks.length === 0) {{
-        ul.innerHTML = '<p class="empty">Aucune tâche pour le moment.</p>';
-        return;
+      try {{
+        const res = await fetch('/tasks');
+        if (!res.ok) throw new Error(`HTTP ${{res.status}}`);
+        const data = await res.json();
+        ul.innerHTML = '';
+        if (data.tasks.length === 0) {{
+          ul.innerHTML = '<p class="empty">Aucune tâche pour le moment.</p>';
+          return;
+        }}
+        data.tasks.forEach(t => ul.appendChild(makeItem(t)));
+      }} catch (e) {{
+        ul.innerHTML = `<p style="color:#f87171">❌ Erreur: ${{e.message}} — La base de données est-elle démarrée ?</p>`;
       }}
-      data.tasks.forEach(t => ul.appendChild(makeItem(t)));
     }}
 
     function makeItem(t) {{
@@ -190,11 +197,13 @@ def hello():
 
 @app.route('/tasks', methods=['GET'])
 def list_tasks():
-    with get_db() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute('SELECT * FROM tasks ORDER BY created_at DESC')
-            tasks = cur.fetchall()
-    return jsonify({'tasks': [dict(t) for t in tasks], 'total': len(tasks)})
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT * FROM tasks ORDER BY created_at DESC')
+    tasks = [dict(t) for t in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify({'tasks': tasks, 'total': len(tasks)})
 
 
 @app.route('/tasks', methods=['POST'])
@@ -202,14 +211,16 @@ def create_task():
     body = request.get_json()
     if not body or not body.get('title'):
         return jsonify({'error': 'title is required'}), 400
-    with get_db() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                'INSERT INTO tasks (title, done) VALUES (%s, %s) RETURNING *',
-                (body['title'], body.get('done', False))
-            )
-            task = cur.fetchone()
-    return jsonify(dict(task)), 201
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        'INSERT INTO tasks (title, done) VALUES (%s, %s) RETURNING *',
+        (body['title'], body.get('done', False))
+    )
+    task = dict(cur.fetchone())
+    cur.close()
+    conn.close()
+    return jsonify(task), 201
 
 
 @app.route('/tasks/<int:task_id>', methods=['PUT'])
@@ -217,24 +228,28 @@ def update_task(task_id):
     body = request.get_json()
     if not body:
         return jsonify({'error': 'body is required'}), 400
-    with get_db() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(
-                'UPDATE tasks SET title = COALESCE(%s, title), done = COALESCE(%s, done) WHERE id = %s RETURNING *',
-                (body.get('title'), body.get('done'), task_id)
-            )
-            task = cur.fetchone()
-    if not task:
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        'UPDATE tasks SET title = COALESCE(%s, title), done = COALESCE(%s, done) WHERE id = %s RETURNING *',
+        (body.get('title'), body.get('done'), task_id)
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if not row:
         return jsonify({'error': 'task not found'}), 404
-    return jsonify(dict(task))
+    return jsonify(dict(row))
 
 
 @app.route('/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute('DELETE FROM tasks WHERE id = %s RETURNING id', (task_id,))
-            deleted = cur.fetchone()
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM tasks WHERE id = %s RETURNING id', (task_id,))
+    deleted = cur.fetchone()
+    cur.close()
+    conn.close()
     if not deleted:
         return jsonify({'error': 'task not found'}), 404
     return jsonify({'deleted': task_id})
