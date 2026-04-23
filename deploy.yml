@@ -1,0 +1,96 @@
+# .github/workflows/deploy.yml
+name: CI/CD Pipeline
+
+# Déclencheur : à chaque push sur la branche main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Variables d'environnement globales
+env:
+  IMAGE_NAME: mon-app-cicd
+  APP_PORT: 3000
+
+jobs:
+  # ─── JOB 1 : Build et Test ───────────────────────────────────
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      # Étape 1 : Récupérer le code
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      # Étape 2 : Construire l'image Docker
+      - name: 🐳 Build de l'image Docker
+        run: |
+          docker build -t $IMAGE_NAME:${{ github.run_number }} .
+          docker tag $IMAGE_NAME:${{ github.run_number }} $IMAGE_NAME:latest
+
+      # Étape 3 : Smoke test — vérifier que l'app démarre
+      - name: 🧪 Test de l'application
+        run: |
+          # Lancer le conteneur en mode test
+          docker run -d --name test-app -p 5001:5000 $IMAGE_NAME:latest
+          sleep 5
+
+          # Tester le health check
+          curl -f http://localhost:5001/health || exit 1
+          echo "✅ Health check OK"
+
+          # Tester la route formations
+          curl -f http://localhost:5001/formations || exit 1
+          echo "✅ Route formations OK"
+
+          # Nettoyage
+          docker stop test-app
+          docker rm test-app
+
+      # Étape 4 : Afficher les images créées
+      - name: 📋 Résumé des images Docker
+        run: docker images | grep $IMAGE_NAME
+
+  # ─── JOB 2 : Notification de succès ─────────────────────────
+  notify:
+    name: Notification
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: ✅ Pipeline réussi
+        run: |
+          echo "╔════════════════════════════════════╗"
+          echo "║ ✅ PIPELINE CI/CD RÉUSSI !         ║"
+          echo "║ Build n° ${{ github.run_number }}  ║"
+          echo "║ Commit: ${{ github.sha }}          ║"
+          echo "╚════════════════════════════════════╝"
+  push-to-registry:
+    name: Push Docker Hub
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && success()
+ 
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🔑 Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 🐳 Build et Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          build-args: |
+            APP_VERSION=${{ github.run_number }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/mon-app-cicd:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/mon-app-cicd:${{ github.run_number }}
+ 

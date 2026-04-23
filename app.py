@@ -65,7 +65,7 @@ def home():
       display: flex; align-items: center; gap: 12px;
       background: #161b22; border: 1px solid #30363d;
       border-radius: 8px; padding: 12px 16px;
-    }}
+    }} 
     li.done span {{ text-decoration: line-through; color: #8b949e; }}
     li span {{ flex: 1; font-size: 15px; }}
     input[type=checkbox] {{ width: 18px; height: 18px; cursor: pointer; accent-color: #56D364; }}
