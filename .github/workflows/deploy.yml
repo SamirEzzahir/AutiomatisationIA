@@ -89,8 +89,8 @@ jobs:
           context: .
           push: true
           build-args: |
-            APP_VERSION=1.${{ github.run_number }}
+            APP_VERSION=${{ github.run_number }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/mon-app-cicd:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/mon-app-cicd:1.${{ github.run_number }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/mon-app-cicd:${{ github.run_number }}
  
