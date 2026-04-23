@@ -80,7 +80,7 @@ def home():
 <body style="width: 500px; margin: 0 auto;">
   <h1>🚀 Mon Application CI/CD</h1>
   <p class="meta">Version : <strong>{VERSION}</strong> &nbsp;|&nbsp; <span class="badge">✅ Pipeline OK</span></p>
-
+ 
   <h2>📋 Mes Tâches</h2>
 
   <div class="add-row">
