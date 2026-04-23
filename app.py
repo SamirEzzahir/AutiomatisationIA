@@ -16,7 +16,7 @@ def home():
         <p>Déployée automatiquement via GitHub Actions + Docker</p>
         <p style="color:#56D364">✅ Pipeline exécuté avec succès</p>
       </body>
-    </html>
+    </html> 
     '''
 
 @app.route('/health')
