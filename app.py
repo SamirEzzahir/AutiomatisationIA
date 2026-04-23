@@ -35,23 +35,128 @@ except Exception:
 
 @app.route('/')
 def home():
-    return f'''
-    <html>
-      <head><title>Mon App CI/CD</title></head>
-      <body style="font-family:Arial; margin:40px; background:#0D1117; color:white">
-        <h1>🚀 Mon Application CI/CD</h1>
-        <p>Version : <strong>{VERSION}</strong></p>
-        <p>Déployée automatiquement via GitHub Actions + Docker</p>
-        <p style="color:#56D364">✅ Pipeline exécuté avec succès</p>
-        <hr style="border-color:#333">
-        <h2>📋 Tasks API</h2>
-        <p>GET &nbsp;&nbsp;<code>/tasks</code> — liste toutes les tâches</p>
-        <p>POST &nbsp;<code>/tasks</code> — créer une tâche (JSON: title)</p>
-        <p>PUT &nbsp;&nbsp;<code>/tasks/&lt;id&gt;</code> — modifier une tâche</p>
-        <p>DELETE <code>/tasks/&lt;id&gt;</code> — supprimer une tâche</p>
-      </body>
-    </html>
-    '''
+    return f'''<!DOCTYPE html>
+<html>
+<head>
+  <title>Mon App CI/CD</title>
+  <meta charset="utf-8">
+  <style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{ font-family: Arial, sans-serif; background: #0D1117; color: white; padding: 40px; }}
+    h1 {{ margin-bottom: 4px; }}
+    .meta {{ color: #8b949e; font-size: 14px; margin-bottom: 24px; }}
+    .badge {{ color: #56D364; }}
+    h2 {{ margin-bottom: 12px; }}
+    .add-row {{ display: flex; gap: 8px; margin-bottom: 24px; }}
+    .add-row input {{
+      flex: 1; padding: 10px 14px; border-radius: 6px;
+      border: 1px solid #30363d; background: #161b22; color: white; font-size: 15px;
+    }}
+    .add-row input:focus {{ outline: none; border-color: #58a6ff; }}
+    .add-row button {{
+      padding: 10px 20px; border-radius: 6px; border: none;
+      background: #238636; color: white; font-size: 15px; cursor: pointer;
+    }}
+    .add-row button:hover {{ background: #2ea043; }}
+    ul {{ list-style: none; display: flex; flex-direction: column; gap: 8px; }}
+    li {{
+      display: flex; align-items: center; gap: 12px;
+      background: #161b22; border: 1px solid #30363d;
+      border-radius: 8px; padding: 12px 16px;
+    }}
+    li.done span {{ text-decoration: line-through; color: #8b949e; }}
+    li span {{ flex: 1; font-size: 15px; }}
+    input[type=checkbox] {{ width: 18px; height: 18px; cursor: pointer; accent-color: #56D364; }}
+    .del-btn {{
+      padding: 5px 12px; border-radius: 6px; border: none;
+      background: #b91c1c; color: white; cursor: pointer; font-size: 13px;
+    }}
+    .del-btn:hover {{ background: #dc2626; }}
+    .empty {{ color: #8b949e; font-style: italic; padding: 12px 0; }}
+  </style>
+</head>
+<body>
+  <h1>🚀 Mon Application CI/CD</h1>
+  <p class="meta">Version : <strong>{VERSION}</strong> &nbsp;|&nbsp; <span class="badge">✅ Pipeline OK</span></p>
+
+  <h2>📋 Mes Tâches</h2>
+
+  <div class="add-row">
+    <input id="newTask" type="text" placeholder="Nouvelle tâche..." />
+    <button onclick="addTask()">Ajouter</button>
+  </div>
+
+  <ul id="taskList"></ul>
+
+  <script>
+    async function loadTasks() {{
+      const res = await fetch('/tasks');
+      const data = await res.json();
+      const ul = document.getElementById('taskList');
+      ul.innerHTML = '';
+      if (data.tasks.length === 0) {{
+        ul.innerHTML = '<p class="empty">Aucune tâche pour le moment.</p>';
+        return;
+      }}
+      data.tasks.forEach(t => ul.appendChild(makeItem(t)));
+    }}
+
+    function makeItem(t) {{
+      const li = document.createElement('li');
+      if (t.done) li.classList.add('done');
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = t.done;
+      cb.onchange = () => toggleTask(t.id, cb.checked);
+
+      const span = document.createElement('span');
+      span.textContent = t.title;
+
+      const btn = document.createElement('button');
+      btn.className = 'del-btn';
+      btn.textContent = 'Supprimer';
+      btn.onclick = () => deleteTask(t.id);
+
+      li.append(cb, span, btn);
+      return li;
+    }}
+
+    async function addTask() {{
+      const input = document.getElementById('newTask');
+      const title = input.value.trim();
+      if (!title) return;
+      await fetch('/tasks', {{
+        method: 'POST',
+        headers: {{'Content-Type': 'application/json'}},
+        body: JSON.stringify({{ title }})
+      }});
+      input.value = '';
+      loadTasks();
+    }}
+
+    async function toggleTask(id, done) {{
+      await fetch(`/tasks/${{id}}`, {{
+        method: 'PUT',
+        headers: {{'Content-Type': 'application/json'}},
+        body: JSON.stringify({{ done }})
+      }});
+      loadTasks();
+    }}
+
+    async function deleteTask(id) {{
+      await fetch(`/tasks/${{id}}`, {{ method: 'DELETE' }});
+      loadTasks();
+    }}
+
+    document.getElementById('newTask').addEventListener('keydown', e => {{
+      if (e.key === 'Enter') addTask();
+    }});
+
+    loadTasks();
+  </script>
+</body>
+</html>'''
 
 
 @app.route('/health')
