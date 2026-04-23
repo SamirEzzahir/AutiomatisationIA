@@ -4,7 +4,7 @@ version: '3.8'
 services:
   app:
     image: samirrox/mon-app-cicd:latest
-    container_name: formation-app
+    container_name: AutomatisationIA
     ports:
       - '5000:5000'
     environment:
@@ -19,7 +19,7 @@ services:
 
   db:
     image: postgres:16-alpine
-    container_name: formation-db
+    container_name: AutomatisationIA-db
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=secret

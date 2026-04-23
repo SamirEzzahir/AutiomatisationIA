@@ -77,7 +77,7 @@ def home():
     .empty {{ color: #8b949e; font-style: italic; padding: 12px 0; }}
   </style>
 </head>
-<body>
+<body style="width: 500px; margin: 0 auto;">
   <h1>🚀 Mon Application CI/CD</h1>
   <p class="meta">Version : <strong>{VERSION}</strong> &nbsp;|&nbsp; <span class="badge">✅ Pipeline OK</span></p>
 
