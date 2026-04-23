@@ -91,3 +91,4 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/mon-app-cicd:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/mon-app-cicd:${{ github.run_number }}
+ 

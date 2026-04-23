@@ -13,7 +13,7 @@ def home():
       <body style="font-family:Arial; margin:40px; background:#0D1117; color:white">
         <h1>🚀 Mon Application CI/CD</h1>
         <p>Version : <strong>{VERSION}</strong></p>
-        <p>test Déployée automatiquement via GitHub Actions + Docker 22git </p>
+        <p>Déployée automatiquement via GitHub Actions + Docker 22git </p>
         <p style="color:#56D364">✅ Pipeline exécuté avec succès</p>
       </body>
     </html>
