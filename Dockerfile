@@ -14,5 +14,5 @@ ARG APP_VERSION=1.0
 ENV APP_VERSION=$APP_VERSION
 
 EXPOSE 5000
-
+ 
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "app:app"]
